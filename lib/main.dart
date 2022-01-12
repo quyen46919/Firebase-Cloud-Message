@@ -1,11 +1,13 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import 'models/message_model.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   await Firebase.initializeApp(
     options: const FirebaseOptions(
       apiKey: 'AIzaSyByP16D22Iq3icMqxi0VFCpPAYMXxobXCU',
@@ -28,7 +30,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const MyHomePage(title: 'Firebase Cloud Messages'),
     );
   }
 }
@@ -43,9 +45,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
 
-  final List <MessageModel> _messageList = [];
-  String? title = '';
-  String? message = '';
+  late List <MessageModel> _messageList = [];
 
   @override
   void initState() {
@@ -54,10 +54,27 @@ class _MyHomePageState extends State<MyHomePage> {
     FirebaseMessaging.instance.getToken().then((value) => print("token is: $value"));
     FirebaseMessaging.onMessage.listen((event) {
       setState(() {
-        _messageList.add(MessageModel(title: event.notification!.title, message: event.notification!.body));
-        title = event.notification?.title;
-        message = event.notification?.body;
+        _messageList.add(MessageModel(title: event.notification?.title, message: event.notification?.body));
+        // print(event.notification);
       });
+    });
+    FirebaseMessaging.onMessageOpenedApp.listen((event) {
+      setState(() {
+        _messageList.add(MessageModel(title: event.notification?.title, message: event.notification?.body));
+        // print(event.notification);
+      });
+    });
+  }
+
+  void deleteMessage(index) {
+    print(index);
+    setState(() {
+      _messageList.removeWhere((message) => message == _messageList[index]);
+    });
+  }
+  void deleteAllMessages() {
+    setState(() {
+      _messageList = [];
     });
   }
 
@@ -67,14 +84,14 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         title: Text(widget.title),
       ),
-      body: Column(
-          children: _messageList.map((e) =>
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
-                  decoration: BoxDecoration(
+      body: ListView(
+        children: _messageList.asMap().entries.map((e) =>
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+                decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(10),
@@ -91,25 +108,44 @@ class _MyHomePageState extends State<MyHomePage> {
                     ),
                   ],
                 ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                          title.toString()
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _messageList[e.key].title.toString(),
+                      style: const TextStyle(
+                          fontSize: 18.0
                       ),
-                      Text(
-                          message.toString()
+                    ),
+                    Text(
+                      _messageList[e.key].message.toString(),
+                      style: const TextStyle(
+                          fontSize: 18.0
                       ),
-                    ],
-          ),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        deleteMessage(e.key);
+                      },
+                      child: const Text(
+                        'Xóa tin nhắn',
+                        style: TextStyle(
+                            fontSize: 18.0
+                        ),
+                      ),
+                    )
+                  ],
                 ),
-              )).toList()
+              ),
+            )).toList()
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {},
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
+        onPressed: () {
+          deleteAllMessages();
+        },
+        tooltip: 'Delete all',
+        child: const Icon(FontAwesomeIcons.trashAlt),
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
